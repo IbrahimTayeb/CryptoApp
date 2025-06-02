@@ -2,7 +2,7 @@
 //  HoldingsDataService.swift
 //  CryptoLauncher
 //
-//  Adapted by AI Assistant
+//  
 //
 
 import Foundation

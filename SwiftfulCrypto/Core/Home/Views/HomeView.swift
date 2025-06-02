@@ -2,7 +2,7 @@
 //  DashboardView.swift
 //  CryptoLauncher
 //
-//  Adapted by AI Assistant
+//  
 //
 
 import SwiftUI

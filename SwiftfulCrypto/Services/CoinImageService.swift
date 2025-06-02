@@ -2,7 +2,7 @@
 //  AssetImageService.swift
 //  CryptoLauncher
 //
-//  Adapted by AI Assistant
+//  
 //
 
 import Foundation
