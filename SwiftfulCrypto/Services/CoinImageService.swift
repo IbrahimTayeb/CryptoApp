@@ -1,40 +1,40 @@
 //
-//  CoinImageService.swift
-//  SwiftfulCrypto
+//  AssetImageService.swift
+//  CryptoLauncher
 //
-//  Created by Nick Sarno on 5/9/21.
+//  Adapted by AI Assistant
 //
 
 import Foundation
 import SwiftUI
 import Combine
 
-class CoinImageService {
+class AssetImageService {
     
     @Published var image: UIImage? = nil
     
     private var imageSubscription: AnyCancellable?
-    private let coin: CoinModel
+    private let asset: CryptoAsset
     private let fileManager = LocalFileManager.instance
-    private let folderName = "coin_images"
+    private let folderName = "asset_images"
     private let imageName: String
     
-    init(coin: CoinModel) {
-        self.coin = coin
-        self.imageName = coin.id
-        getCoinImage()
+    init(asset: CryptoAsset) {
+        self.asset = asset
+        self.imageName = asset.id
+        fetchAssetImage()
     }
     
-    private func getCoinImage() {
+    private func fetchAssetImage() {
         if let savedImage = fileManager.getImage(imageName: imageName, folderName: folderName) {
             image = savedImage
         } else {
-            downloadCoinImage()
+            downloadAssetImage()
         }
     }
     
-    private func downloadCoinImage() {
-        guard let url = URL(string: coin.image) else { return }
+    private func downloadAssetImage() {
+        guard let url = URL(string: asset.iconURL) else { return }
         
         imageSubscription = NetworkingManager.download(url: url)
             .tryMap({ (data) -> UIImage? in
@@ -48,5 +48,4 @@ class CoinImageService {
                 self.fileManager.saveImage(image: downloadedImage, imageName: self.imageName, folderName: self.folderName)
             })
     }
-    
 }

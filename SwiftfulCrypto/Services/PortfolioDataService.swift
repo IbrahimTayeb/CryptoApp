@@ -1,20 +1,20 @@
 //
-//  PortfolioDataService.swift
-//  SwiftfulCrypto
+//  HoldingsDataService.swift
+//  CryptoLauncher
 //
-//  Created by Nick Sarno on 5/10/21.
+//  Adapted by AI Assistant
 //
 
 import Foundation
 import CoreData
 
-class PortfolioDataService {
+class HoldingsDataService {
     
     private let container: NSPersistentContainer
     private let containerName: String = "PortfolioContainer"
     private let entityName: String = "PortfolioEntity"
     
-    @Published var savedEntities: [PortfolioEntity] = []
+    @Published var storedEntities: [PortfolioEntity] = []
     
     init() {
         container = NSPersistentContainer(name: containerName)
@@ -22,53 +22,52 @@ class PortfolioDataService {
             if let error = error {
                 print("Error loading Core Data! \(error)")
             }
-            self.getPortfolio()
+            self.fetchHoldings()
         }
     }
     
     // MARK: PUBLIC
     
-    func updatePortfolio(coin: CoinModel, amount: Double) {
-        // check if coin is already in portfolio
-        if let entity = savedEntities.first(where: { $0.coinID == coin.id }) {
-            if amount > 0 {
-                update(entity: entity, amount: amount)
+    func updateHoldings(asset: CryptoAsset, quantity: Double) {
+        // check if asset is already in holdings
+        if let entity = storedEntities.first(where: { $0.coinID == asset.id }) {
+            if quantity > 0 {
+                update(entity: entity, quantity: quantity)
             } else {
-                delete(entity: entity)
+                remove(entity: entity)
             }
         } else {
-            add(coin: coin, amount: amount)
+            add(asset: asset, quantity: quantity)
         }
     }
     
     // MARK: PRIVATE
     
-    private func getPortfolio() {
+    private func fetchHoldings() {
         let request = NSFetchRequest<PortfolioEntity>(entityName: entityName)
         do {
-            savedEntities = try container.viewContext.fetch(request)
+            storedEntities = try container.viewContext.fetch(request)
         } catch let error {
             print("Error fetching Portfolio Entities. \(error)")
         }
     }
     
-    private func add(coin: CoinModel, amount: Double) {
+    private func add(asset: CryptoAsset, quantity: Double) {
         let entity = PortfolioEntity(context: container.viewContext)
-        entity.coinID = coin.id
-        entity.amount = amount
+        entity.coinID = asset.id
+        entity.amount = quantity
         applyChanges()
     }
     
-    private func update(entity: PortfolioEntity, amount: Double) {
-        entity.amount = amount
+    private func update(entity: PortfolioEntity, quantity: Double) {
+        entity.amount = quantity
         applyChanges()
     }
     
-    private func delete(entity: PortfolioEntity) {
+    private func remove(entity: PortfolioEntity) {
         container.viewContext.delete(entity)
         applyChanges()
     }
-    
     
     private func save() {
         do {
@@ -80,9 +79,6 @@ class PortfolioDataService {
     
     private func applyChanges() {
         save()
-        getPortfolio()
+        fetchHoldings()
     }
-    
-    
-    
 }

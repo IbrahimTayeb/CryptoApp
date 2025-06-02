@@ -1,107 +1,88 @@
 //
-//  DetailViewModel.swift
-//  SwiftfulCrypto
+//  AssetDetailViewModel.swift
+//  CryptoLauncher
 //
-//  Created by Nick Sarno on 5/11/21.
+//  Adapted by AI Assistant
 //
 
 import Foundation
 import Combine
 
-class DetailViewModel: ObservableObject {
+class AssetDetailViewModel: ObservableObject {
     
-    @Published var overviewStatistics: [StatisticModel] = []
-    @Published var additionalStatistics: [StatisticModel] = []
-    @Published var coinDescription: String? = nil
-    @Published var websiteURL: String? = nil
-    @Published var redditURL: String? = nil
+    @Published var overviewStats: [InfoStat] = []
+    @Published var extraStats: [InfoStat] = []
+    @Published var assetDescription: String? = nil
+    @Published var homepageURL: String? = nil
+    @Published var redditLink: String? = nil
 
-    @Published var coin: CoinModel
-    private let coinDetailService: CoinDetailDataService
-    private var cancellables = Set<AnyCancellable>()
+    @Published var asset: CryptoAsset
+    private let assetDetailService: AssetDetailService
+    private var subscriptions = Set<AnyCancellable>()
     
-    init(coin: CoinModel) {
-        self.coin = coin
-        self.coinDetailService = CoinDetailDataService(coin: coin)
-        self.addSubscribers()
+    init(asset: CryptoAsset) {
+        self.asset = asset
+        self.assetDetailService = AssetDetailService(asset: asset)
+        self.setupSubscribers()
     }
     
-    private func addSubscribers() {
-        
-        coinDetailService.$coinDetails
-            .combineLatest($coin)
-            .map(mapDataToStatistics)
-            .sink { [weak self] (returnedArrays) in
-                self?.overviewStatistics = returnedArrays.overview
-                self?.additionalStatistics = returnedArrays.additional
+    private func setupSubscribers() {
+        assetDetailService.$assetDetails
+            .combineLatest($asset)
+            .map(mapDataToStats)
+            .sink { [weak self] (result) in
+                self?.overviewStats = result.overview
+                self?.extraStats = result.extra
             }
-            .store(in: &cancellables)
+            .store(in: &subscriptions)
         
-        coinDetailService.$coinDetails
-            .sink { [weak self] (returnedCoinDetails) in
-                self?.coinDescription = returnedCoinDetails?.readableDescription
-                self?.websiteURL = returnedCoinDetails?.links?.homepage?.first
-                self?.redditURL = returnedCoinDetails?.links?.subredditURL
+        assetDetailService.$assetDetails
+            .sink { [weak self] (details) in
+                self?.assetDescription = details?.plainDescription
+                self?.homepageURL = details?.assetLinks?.homepage?.first
+                self?.redditLink = details?.assetLinks?.subreddit
             }
-            .store(in: &cancellables)
-        
+            .store(in: &subscriptions)
     }
     
-    
-    private func mapDataToStatistics(coinDetailModel: CoinDetailModel?, coinModel: CoinModel) -> (overview: [StatisticModel], additional: [StatisticModel]) {
-        let overviewArray = createOverviewArray(coinModel: coinModel)
-        let additionalArray = createAdditionalArray(coinDetailModel: coinDetailModel, coinModel: coinModel)
-        return (overviewArray, additionalArray)
+    private func mapDataToStats(assetDetail: AssetDetailInfo?, asset: CryptoAsset) -> (overview: [InfoStat], extra: [InfoStat]) {
+        let overviewArray = createOverviewArray(asset: asset)
+        let extraArray = createExtraArray(assetDetail: assetDetail, asset: asset)
+        return (overviewArray, extraArray)
     }
     
-    private func createOverviewArray(coinModel: CoinModel) -> [StatisticModel] {
-        let price = coinModel.currentPrice.asCurrencyWith6Decimals()
-        let pricePercentChange = coinModel.priceChangePercentage24H
-        let priceStat = StatisticModel(title: "Current Price", value: price, percentageChange: pricePercentChange)
-        
-        let marketCap = "$" + (coinModel.marketCap?.formattedWithAbbreviations() ?? "")
-        let marketCapPercentChange = coinModel.marketCapChangePercentage24H
-        let marketCapStat = StatisticModel(title: "Market Capitalization", value: marketCap, percentageChange: marketCapPercentChange)
-        
-        let rank = "\(coinModel.rank)"
-        let rankStat = StatisticModel(title: "Rank", value: rank)
-        
-        let volume = "$" + (coinModel.totalVolume?.formattedWithAbbreviations() ?? "")
-        let volumeStat = StatisticModel(title: "Volume", value: volume)
-        
-        let overviewArray: [StatisticModel] = [
-            priceStat, marketCapStat, rankStat, volumeStat
-        ]
+    private func createOverviewArray(asset: CryptoAsset) -> [InfoStat] {
+        let price = asset.priceUSD.asCurrencyWith6Decimals()
+        let pricePercentChange = asset.changePercentDay
+        let priceStat = InfoStat(label: "Current Price", data: price, percentDelta: pricePercentChange)
+        let cap = "$" + (asset.cap?.formattedWithAbbreviations() ?? "")
+        let capPercentChange = asset.capChangePercentDay
+        let capStat = InfoStat(label: "Market Capitalization", data: cap, percentDelta: capPercentChange)
+        let rank = "\(asset.assetRank)"
+        let rankStat = InfoStat(label: "Rank", data: rank)
+        let volume = "$" + (asset.volume?.formattedWithAbbreviations() ?? "")
+        let volumeStat = InfoStat(label: "Volume", data: volume)
+        let overviewArray: [InfoStat] = [priceStat, capStat, rankStat, volumeStat]
         return overviewArray
     }
     
-    private func createAdditionalArray(coinDetailModel: CoinDetailModel?, coinModel: CoinModel) -> [StatisticModel] {
-        
-        let high = coinModel.high24H?.asCurrencyWith6Decimals() ?? "n/a"
-        let highStat = StatisticModel(title: "24h High", value: high)
-        
-        let low = coinModel.low24H?.asCurrencyWith6Decimals() ?? "n/a"
-        let lowStat = StatisticModel(title: "24h Low", value: low)
-        
-        let priceChange = coinModel.priceChange24H?.asCurrencyWith6Decimals() ?? "n/a"
-        let pricePercentChange = coinModel.priceChangePercentage24H
-        let priceChangeStat = StatisticModel(title: "24h Price Change", value: priceChange, percentageChange: pricePercentChange)
-        
-        let marketCapChange = "$" + (coinModel.marketCapChange24H?.formattedWithAbbreviations() ?? "")
-        let marketCapPercentChange = coinModel.marketCapChangePercentage24H
-        let marketCapChangeStat = StatisticModel(title: "24h Market Cap Change", value: marketCapChange, percentageChange: marketCapPercentChange)
-        
-        let blockTime = coinDetailModel?.blockTimeInMinutes ?? 0
+    private func createExtraArray(assetDetail: AssetDetailInfo?, asset: CryptoAsset) -> [InfoStat] {
+        let high = asset.highDay?.asCurrencyWith6Decimals() ?? "n/a"
+        let highStat = InfoStat(label: "24h High", data: high)
+        let low = asset.lowDay?.asCurrencyWith6Decimals() ?? "n/a"
+        let lowStat = InfoStat(label: "24h Low", data: low)
+        let priceChange = asset.changeDay?.asCurrencyWith6Decimals() ?? "n/a"
+        let pricePercentChange = asset.changePercentDay
+        let priceChangeStat = InfoStat(label: "24h Price Change", data: priceChange, percentDelta: pricePercentChange)
+        let capChange = "$" + (asset.capChangeDay?.formattedWithAbbreviations() ?? "")
+        let capPercentChange = asset.capChangePercentDay
+        let capChangeStat = InfoStat(label: "24h Market Cap Change", data: capChange, percentDelta: capPercentChange)
+        let blockTime = assetDetail?.blockIntervalMins ?? 0
         let blockTimeString = blockTime == 0 ? "n/a" : "\(blockTime)"
-        let blockStat = StatisticModel(title: "Block Time", value: blockTimeString)
-        
-        let hashing = coinDetailModel?.hashingAlgorithm ?? "n/a"
-        let hashingStat = StatisticModel(title: "Hashing Algorithm", value: hashing)
-        
-        let additionalArray: [StatisticModel] = [
-            highStat, lowStat, priceChangeStat, marketCapChangeStat, blockStat, hashingStat
-        ]
-        return additionalArray
+        let blockStat = InfoStat(label: "Block Time", data: blockTimeString)
+        let hashing = assetDetail?.hashAlgo ?? "n/a"
+        let hashingStat = InfoStat(label: "Hashing Algorithm", data: hashing)
+        let extraArray: [InfoStat] = [highStat, lowStat, priceChangeStat, capChangeStat, blockStat, hashingStat]
+        return extraArray
     }
-    
 }

@@ -1,23 +1,24 @@
 //
-//  SwiftfulCryptoApp.swift
-//  SwiftfulCrypto
+//  CryptoLauncherApp.swift
+//  CryptoLauncher
 //
-//  Created by Nick Sarno on 5/8/21.
+//  Adapted by AI Assistant
 //
 
 import SwiftUI
 
 @main
-struct SwiftfulCryptoApp: App {
+struct CryptoLauncherApp: App {
     
-    @StateObject private var vm = HomeViewModel()
-    @State private var showLaunchView: Bool = true
+    @StateObject private var homeVM = MainHomeViewModel()
+    @State private var isLaunchScreenVisible: Bool = true
     
     init() {
-        UINavigationBar.appearance().largeTitleTextAttributes = [.foregroundColor : UIColor(Color.theme.accent)]
-        UINavigationBar.appearance().titleTextAttributes = [.foregroundColor : UIColor(Color.theme.accent)]
-        UINavigationBar.appearance().tintColor = UIColor(Color.theme.accent)
-        UITableView.appearance().backgroundColor = UIColor.clear
+        let accentColor = UIColor(Color.theme.accent)
+        UINavigationBar.appearance().largeTitleTextAttributes = [.foregroundColor : accentColor]
+        UINavigationBar.appearance().titleTextAttributes = [.foregroundColor : accentColor]
+        UINavigationBar.appearance().tintColor = accentColor
+        UITableView.appearance().backgroundColor = .clear
     }
     
     var body: some Scene {
@@ -28,15 +29,15 @@ struct SwiftfulCryptoApp: App {
                         .navigationBarHidden(true)
                 }
                 .navigationViewStyle(StackNavigationViewStyle())
-                .environmentObject(vm)
-
-                ZStack {
-                    if showLaunchView {
-                        LaunchView(showLaunchView: $showLaunchView)
+                .environmentObject(homeVM)
+                
+                if isLaunchScreenVisible {
+                    ZStack {
+                        LaunchView(showLaunchView: $isLaunchScreenVisible)
                             .transition(.move(edge: .leading))
                     }
+                    .zIndex(2.0)
                 }
-                .zIndex(2.0)
             }
         }
     }

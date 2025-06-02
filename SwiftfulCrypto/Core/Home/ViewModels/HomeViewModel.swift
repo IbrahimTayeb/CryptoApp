@@ -1,176 +1,150 @@
 //
-//  HomeViewModel.swift
-//  SwiftfulCrypto
+//  MainHomeViewModel.swift
+//  CryptoLauncher
 //
-//  Created by Nick Sarno on 5/9/21.
+//  Adapted by AI Assistant
 //
 
 import Foundation
 import Combine
 
-class HomeViewModel: ObservableObject {
+class MainHomeViewModel: ObservableObject {
     
-    @Published var statistics: [StatisticModel] = []
-    @Published var allCoins: [CoinModel] = []
-    @Published var portfolioCoins: [CoinModel] = []
-    @Published var isLoading: Bool = false
-    @Published var searchText: String = ""
-    @Published var sortOption: SortOption = .holdings
-        
-    private let coinDataService = CoinDataService()
-    private let marketDataService = MarketDataService()
-    private let portfolioDataService = PortfolioDataService()
-    private var cancellables = Set<AnyCancellable>()
+    @Published var stats: [InfoStat] = []
+    @Published var allAssets: [CryptoAsset] = []
+    @Published var holdings: [CryptoAsset] = []
+    @Published var loading: Bool = false
+    @Published var query: String = ""
+    @Published var sortMode: SortMode = .byHoldings
     
-    enum SortOption {
-        case rank, rankReversed, holdings, holdingsReversed, price, priceReversed
+    private let assetListService = AssetListService()
+    private let globalStatsService = GlobalStatsService()
+    private let holdingsService = HoldingsDataService()
+    private var subscriptions = Set<AnyCancellable>()
+    
+    enum SortMode {
+        case byRank, byRankDesc, byHoldings, byHoldingsDesc, byPrice, byPriceDesc
     }
     
     init() {
-        addSubscribers()
+        setupSubscribers()
     }
     
-    func addSubscribers() {
-        
-        // updates allCoins
-        $searchText
-            .combineLatest(coinDataService.$allCoins, $sortOption)
+    func setupSubscribers() {
+        // updates allAssets
+        $query
+            .combineLatest(assetListService.$allAssets, $sortMode)
             .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main)
-            .map(filterAndSortCoins)
-            .sink { [weak self] (returnedCoins) in
-                self?.allCoins = returnedCoins
+            .map(filterAndSortAssets)
+            .sink { [weak self] (assets) in
+                self?.allAssets = assets
             }
-            .store(in: &cancellables)
+            .store(in: &subscriptions)
         
-        // updates portfolioCoins
-        $allCoins
-            .combineLatest(portfolioDataService.$savedEntities)
-            .map(mapAllCoinsToPortfolioCoins)
-            .sink { [weak self] (returnedCoins) in
+        // updates holdings
+        $allAssets
+            .combineLatest(holdingsService.$storedEntities)
+            .map(mapAllAssetsToHoldings)
+            .sink { [weak self] (assets) in
                 guard let self = self else { return }
-                self.portfolioCoins = self.sortPortfolioCoinsIfNeeded(coins: returnedCoins)
+                self.holdings = self.sortHoldingsIfNeeded(assets: assets)
             }
-            .store(in: &cancellables)
-
+            .store(in: &subscriptions)
         
-        // updates marketData
-        marketDataService.$marketData
-            .combineLatest($portfolioCoins)
-            .map(mapGlobalMarketData)
+        // updates global stats
+        globalStatsService.$globalStats
+            .combineLatest($holdings)
+            .map(mapGlobalStats)
             .sink { [weak self] (returnedStats) in
-                self?.statistics = returnedStats
-                self?.isLoading = false
+                self?.stats = returnedStats
+                self?.loading = false
             }
-            .store(in: &cancellables)
-        
+            .store(in: &subscriptions)
     }
     
-    func updatePortfolio(coin: CoinModel, amount: Double) {
-        portfolioDataService.updatePortfolio(coin: coin, amount: amount)
+    func updateHoldings(asset: CryptoAsset, quantity: Double) {
+        holdingsService.updateHoldings(asset: asset, quantity: quantity)
     }
     
-    func reloadData() {
-        isLoading = true
-        coinDataService.getCoins()
-        marketDataService.getData()
+    func refreshData() {
+        loading = true
+        assetListService.fetchAssets()
+        globalStatsService.fetchStats()
         HapticManager.notification(type: .success)
     }
     
-    private func filterAndSortCoins(text: String, coins: [CoinModel], sort: SortOption) -> [CoinModel] {
-        var updatedCoins = filterCoins(text: text, coins: coins)
-        sortCoins(sort: sort, coins: &updatedCoins)
-        return updatedCoins
+    private func filterAndSortAssets(text: String, assets: [CryptoAsset], sort: SortMode) -> [CryptoAsset] {
+        var filtered = filterAssets(text: text, assets: assets)
+        sortAssets(sort: sort, assets: &filtered)
+        return filtered
     }
     
-    private func filterCoins(text: String, coins: [CoinModel]) -> [CoinModel] {
+    private func filterAssets(text: String, assets: [CryptoAsset]) -> [CryptoAsset] {
         guard !text.isEmpty else {
-            return coins
+            return assets
         }
-        
-        let lowercasedText = text.lowercased()
-        
-        return coins.filter { (coin) -> Bool in
-            return coin.name.lowercased().contains(lowercasedText) ||
-                    coin.symbol.lowercased().contains(lowercasedText) ||
-                    coin.id.lowercased().contains(lowercasedText)
+        let lowercased = text.lowercased()
+        return assets.filter { asset in
+            asset.fullName.lowercased().contains(lowercased) ||
+            asset.ticker.lowercased().contains(lowercased) ||
+            asset.id.lowercased().contains(lowercased)
         }
     }
     
-    private func sortCoins(sort: SortOption, coins: inout [CoinModel]) {
+    private func sortAssets(sort: SortMode, assets: inout [CryptoAsset]) {
         switch sort {
-        case .rank, .holdings:
-            coins.sort(by: { $0.rank < $1.rank })
-        case .rankReversed, .holdingsReversed:
-            coins.sort(by: { $0.rank > $1.rank })
-        case .price:
-            coins.sort(by: { $0.currentPrice > $1.currentPrice })
-        case .priceReversed:
-            coins.sort(by: { $0.currentPrice < $1.currentPrice })
+        case .byRank, .byHoldings:
+            assets.sort(by: { $0.assetRank < $1.assetRank })
+        case .byRankDesc, .byHoldingsDesc:
+            assets.sort(by: { $0.assetRank > $1.assetRank })
+        case .byPrice:
+            assets.sort(by: { $0.priceUSD > $1.priceUSD })
+        case .byPriceDesc:
+            assets.sort(by: { $0.priceUSD < $1.priceUSD })
         }
     }
     
-    private func sortPortfolioCoinsIfNeeded(coins: [CoinModel]) -> [CoinModel] {
-        // will only sort by holdings or reversedholdings if needed
-        switch sortOption {
-        case .holdings:
-            return coins.sorted(by: { $0.currentHoldingsValue > $1.currentHoldingsValue })
-        case .holdingsReversed:
-            return coins.sorted(by: { $0.currentHoldingsValue < $1.currentHoldingsValue })
+    private func sortHoldingsIfNeeded(assets: [CryptoAsset]) -> [CryptoAsset] {
+        switch sortMode {
+        case .byHoldings:
+            return assets.sorted(by: { $0.ownedValue > $1.ownedValue })
+        case .byHoldingsDesc:
+            return assets.sorted(by: { $0.ownedValue < $1.ownedValue })
         default:
-            return coins
+            return assets
         }
     }
     
-    private func mapAllCoinsToPortfolioCoins(allCoins: [CoinModel], portfolioEntities: [PortfolioEntity]) -> [CoinModel] {
-        allCoins
-            .compactMap { (coin) -> CoinModel? in
-                guard let entity = portfolioEntities.first(where: { $0.coinID == coin.id }) else {
-                    return nil
-                }
-                return coin.updateHoldings(amount: entity.amount)
+    private func mapAllAssetsToHoldings(allAssets: [CryptoAsset], storedEntities: [PortfolioEntity]) -> [CryptoAsset] {
+        allAssets.compactMap { asset in
+            guard let entity = storedEntities.first(where: { $0.coinID == asset.id }) else {
+                return nil
             }
+            return asset.withUpdatedHoldings(entity.amount)
+        }
     }
     
-    private func mapGlobalMarketData(marketDataModel: MarketDataModel?, portfolioCoins: [CoinModel]) -> [StatisticModel] {
-        var stats: [StatisticModel] = []
-    
-        guard let data = marketDataModel else {
+    private func mapGlobalStats(globalStats: GlobalMarketStats?, holdings: [CryptoAsset]) -> [InfoStat] {
+        var stats: [InfoStat] = []
+        guard let data = globalStats else {
             return stats
         }
-        
-        let marketCap = StatisticModel(title: "Market Cap", value: data.marketCap, percentageChange: data.marketCapChangePercentage24HUsd)
-        let volume = StatisticModel(title: "24h Volume", value: data.volume)
-        let btcDominance = StatisticModel(title: "BTC Dominance", value: data.btcDominance)
-        
-        let portfolioValue =
-            portfolioCoins
-                .map({ $0.currentHoldingsValue })
-                .reduce(0, +)
-        
-        let previousValue =
-            portfolioCoins
-                .map { (coin) -> Double in
-                    let currentValue = coin.currentHoldingsValue
-                    let percentChange = coin.priceChangePercentage24H ?? 0 / 100
-                    let previousValue = currentValue / (1 + percentChange)
-                    return previousValue
-                }
-                .reduce(0, +)
-
-        let percentageChange = ((portfolioValue - previousValue) / previousValue)
-        
-        let portfolio = StatisticModel(
-            title: "Portfolio Value",
-            value: portfolioValue.asCurrencyWith2Decimals(),
-            percentageChange: percentageChange)
-        
-        stats.append(contentsOf: [
-            marketCap,
-            volume,
-            btcDominance,
-            portfolio
-        ])
+        let marketCap = InfoStat(label: "Market Cap", data: data.formattedMarketCap, percentDelta: data.capChangePercent24hUSD)
+        let volume = InfoStat(label: "24h Volume", data: data.formattedVolume)
+        let btcDominance = InfoStat(label: "BTC Dominance", data: data.bitcoinDominance)
+        let holdingsValue = holdings.map({ $0.ownedValue }).reduce(0, +)
+        let previousValue = holdings.map { asset -> Double in
+            let currentValue = asset.ownedValue
+            let percentChange = asset.changePercentDay ?? 0 / 100
+            let prevValue = currentValue / (1 + percentChange)
+            return prevValue
+        }.reduce(0, +)
+        let percentDelta = ((holdingsValue - previousValue) / previousValue)
+        let portfolio = InfoStat(
+            label: "Portfolio Value",
+            data: holdingsValue.asCurrencyWith2Decimals(),
+            percentDelta: percentDelta)
+        stats.append(contentsOf: [marketCap, volume, btcDominance, portfolio])
         return stats
     }
-    
 }

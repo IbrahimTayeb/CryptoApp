@@ -1,8 +1,8 @@
 //
-//  CoinModel.swift
-//  SwiftfulCrypto
+//  CryptoAssetModel.swift
+//  CryptoLauncher
 //
-//  Created by Nick Sarno on 5/8/21.
+//  Adapted by AI Assistant
 //
 
 import Foundation
@@ -50,72 +50,70 @@ import Foundation
  
  */
 
-
-import Foundation
-
-
-struct CoinModel: Identifiable, Codable {
-    let id, symbol, name: String
-    let image: String
-    let currentPrice: Double
-    let marketCap, marketCapRank, fullyDilutedValuation: Double?
-    let totalVolume, high24H, low24H: Double?
-    let priceChange24H: Double?
-    let priceChangePercentage24H: Double?
-    let marketCapChange24H: Double?
-    let marketCapChangePercentage24H: Double?
-    let circulatingSupply, totalSupply, maxSupply, ath: Double?
-    let athChangePercentage: Double?
-    let athDate: String?
-    let atl, atlChangePercentage: Double?
-    let atlDate: String?
-    let lastUpdated: String?
-    let sparklineIn7D: SparklineIn7D?
-    let priceChangePercentage24HInCurrency: Double?
-    let currentHoldings: Double?
+struct CryptoAsset: Identifiable, Codable {
+    let id, ticker, fullName: String
+    let iconURL: String
+    let priceUSD: Double
+    let cap, capRank, dilutedValuation: Double?
+    let volume, highDay, lowDay: Double?
+    let changeDay: Double?
+    let changePercentDay: Double?
+    let capChangeDay: Double?
+    let capChangePercentDay: Double?
+    let supplyCirculating, supplyTotal, supplyMax, allTimeHigh: Double?
+    let athChangePercent: Double?
+    let athTimestamp: String?
+    let allTimeLow, atlChangePercent: Double?
+    let atlTimestamp: String?
+    let lastRefreshed: String?
+    let weekSparkline: SevenDaySparkline?
+    let changePercentDayCurrency: Double?
+    let ownedAmount: Double?
     
     enum CodingKeys: String, CodingKey {
-        case id, symbol, name, image
-        case currentPrice = "current_price"
-        case marketCap = "market_cap"
-        case marketCapRank = "market_cap_rank"
-        case fullyDilutedValuation = "fully_diluted_valuation"
-        case totalVolume = "total_volume"
-        case high24H = "high_24h"
-        case low24H = "low_24h"
-        case priceChange24H = "price_change_24h"
-        case priceChangePercentage24H = "price_change_percentage_24h"
-        case marketCapChange24H = "market_cap_change_24h"
-        case marketCapChangePercentage24H = "market_cap_change_percentage_24h"
-        case circulatingSupply = "circulating_supply"
-        case totalSupply = "total_supply"
-        case maxSupply = "max_supply"
-        case ath
-        case athChangePercentage = "ath_change_percentage"
-        case athDate = "ath_date"
-        case atl
-        case atlChangePercentage = "atl_change_percentage"
-        case atlDate = "atl_date"
-        case lastUpdated = "last_updated"
-        case sparklineIn7D = "sparkline_in_7d"
-        case priceChangePercentage24HInCurrency = "price_change_percentage_24h_in_currency"
-        case currentHoldings
+        case id
+        case ticker = "symbol"
+        case fullName = "name"
+        case iconURL = "image"
+        case priceUSD = "current_price"
+        case cap = "market_cap"
+        case capRank = "market_cap_rank"
+        case dilutedValuation = "fully_diluted_valuation"
+        case volume = "total_volume"
+        case highDay = "high_24h"
+        case lowDay = "low_24h"
+        case changeDay = "price_change_24h"
+        case changePercentDay = "price_change_percentage_24h"
+        case capChangeDay = "market_cap_change_24h"
+        case capChangePercentDay = "market_cap_change_percentage_24h"
+        case supplyCirculating = "circulating_supply"
+        case supplyTotal = "total_supply"
+        case supplyMax = "max_supply"
+        case allTimeHigh = "ath"
+        case athChangePercent = "ath_change_percentage"
+        case athTimestamp = "ath_date"
+        case allTimeLow = "atl"
+        case atlChangePercent = "atl_change_percentage"
+        case atlTimestamp = "atl_date"
+        case lastRefreshed = "last_updated"
+        case weekSparkline = "sparkline_in_7d"
+        case changePercentDayCurrency = "price_change_percentage_24h_in_currency"
+        case ownedAmount = "currentHoldings"
     }
     
-    func updateHoldings(amount: Double) -> CoinModel {
-        return CoinModel(id: id, symbol: symbol, name: name, image: image, currentPrice: currentPrice, marketCap: marketCap, marketCapRank: marketCapRank, fullyDilutedValuation: fullyDilutedValuation, totalVolume: totalVolume, high24H: high24H, low24H: low24H, priceChange24H: priceChange24H, priceChangePercentage24H: priceChangePercentage24H, marketCapChange24H: marketCapChange24H, marketCapChangePercentage24H: marketCapChangePercentage24H, circulatingSupply: circulatingSupply, totalSupply: totalSupply, maxSupply: maxSupply, ath: ath, athChangePercentage: athChangePercentage, athDate: athDate, atl: atl, atlChangePercentage: atlChangePercentage, atlDate: atlDate, lastUpdated: lastUpdated, sparklineIn7D: sparklineIn7D, priceChangePercentage24HInCurrency: priceChangePercentage24HInCurrency, currentHoldings: amount)
+    func withUpdatedHoldings(_ amount: Double) -> CryptoAsset {
+        return CryptoAsset(id: id, ticker: ticker, fullName: fullName, iconURL: iconURL, priceUSD: priceUSD, cap: cap, capRank: capRank, dilutedValuation: dilutedValuation, volume: volume, highDay: highDay, lowDay: lowDay, changeDay: changeDay, changePercentDay: changePercentDay, capChangeDay: capChangeDay, capChangePercentDay: capChangePercentDay, supplyCirculating: supplyCirculating, supplyTotal: supplyTotal, supplyMax: supplyMax, allTimeHigh: allTimeHigh, athChangePercent: athChangePercent, athTimestamp: athTimestamp, allTimeLow: allTimeLow, atlChangePercent: atlChangePercent, atlTimestamp: atlTimestamp, lastRefreshed: lastRefreshed, weekSparkline: weekSparkline, changePercentDayCurrency: changePercentDayCurrency, ownedAmount: amount)
     }
     
-    var currentHoldingsValue: Double {
-        return (currentHoldings ?? 0) * currentPrice
+    var ownedValue: Double {
+        return (ownedAmount ?? 0) * priceUSD
     }
     
-    var rank: Int {
-        return Int(marketCapRank ?? 0)
+    var assetRank: Int {
+        return Int(capRank ?? 0)
     }
-    
 }
 
-struct SparklineIn7D: Codable {
+struct SevenDaySparkline: Codable {
     let price: [Double]?
 }

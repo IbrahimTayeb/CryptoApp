@@ -1,8 +1,8 @@
 //
-//  CoinDetailModel.swift
-//  SwiftfulCrypto
+//  AssetDetailInfo.swift
+//  CryptoLauncher
 //
-//  Created by Nick Sarno on 5/11/21.
+//  Adapted by AI Assistant
 //
 
 import Foundation
@@ -96,35 +96,38 @@ import Foundation
  
  */
 
-
-struct CoinDetailModel: Codable {
-    let id, symbol, name: String?
-    let blockTimeInMinutes: Int?
-    let hashingAlgorithm: String?
-    let description: Description?
-    let links: Links?
+struct AssetDetailInfo: Codable {
+    let id, ticker, fullName: String?
+    let blockIntervalMins: Int?
+    let hashAlgo: String?
+    let assetDescription: LocalizedDescription?
+    let assetLinks: AssetLinks?
     
     enum CodingKeys: String, CodingKey {
-        case id, symbol, name, description, links
-        case blockTimeInMinutes = "block_time_in_minutes"
-        case hashingAlgorithm = "hashing_algorithm"
+        case id
+        case ticker = "symbol"
+        case fullName = "name"
+        case assetDescription = "description"
+        case assetLinks = "links"
+        case blockIntervalMins = "block_time_in_minutes"
+        case hashAlgo = "hashing_algorithm"
     }
     
-    var readableDescription: String? {
-        return description?.en?.removingHTMLOccurances
+    var plainDescription: String? {
+        return assetDescription?.en?.removingHTMLOccurances
     }
 }
 
-struct Links: Codable {
+struct AssetLinks: Codable {
     let homepage: [String]?
-    let subredditURL: String?
+    let subreddit: String?
     
     enum CodingKeys: String, CodingKey {
         case homepage
-        case subredditURL = "subreddit_url"
+        case subreddit = "subreddit_url"
     }
 }
 
-struct Description: Codable {
+struct LocalizedDescription: Codable {
     let en: String?
 }

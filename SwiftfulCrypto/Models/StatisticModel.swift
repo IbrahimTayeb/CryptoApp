@@ -1,21 +1,21 @@
 //
-//  StatisticModel.swift
-//  SwiftfulCrypto
+//  InfoStat.swift
+//  CryptoLauncher
 //
-//  Created by Nick Sarno on 5/9/21.
+//  Adapted by AI Assistant
 //
 
 import Foundation
 
-struct StatisticModel: Identifiable {
+struct InfoStat: Identifiable {
     let id = UUID().uuidString
-    let title: String
-    let value: String
-    let percentageChange: Double?
+    let label: String
+    let data: String
+    let percentDelta: Double?
     
-    init(title: String, value: String, percentageChange: Double? = nil) {
-        self.title = title
-        self.value = value
-        self.percentageChange = percentageChange
+    init(label: String, data: String, percentDelta: Double? = nil) {
+        self.label = label
+        self.data = data
+        self.percentDelta = percentDelta
     }
 }

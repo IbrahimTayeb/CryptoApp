@@ -1,8 +1,8 @@
 //
-//  MarketDataModel.swift
-//  SwiftfulCrypto
+//  GlobalMarketStats.swift
+//  CryptoLauncher
 //
-//  Created by Nick Sarno on 5/9/21.
+//  Adapted by AI Assistant
 //
 
 import Foundation
@@ -166,41 +166,40 @@ import Foundation
  
  */
 
-struct GlobalData: Codable {
-    let data: MarketDataModel?
+struct GlobalStats: Codable {
+    let info: GlobalMarketStats?
 }
 
-struct MarketDataModel: Codable {
-    let totalMarketCap, totalVolume, marketCapPercentage: [String: Double]
-    let marketCapChangePercentage24HUsd: Double
+struct GlobalMarketStats: Codable {
+    let capTotals, volumeTotals, capPercentages: [String: Double]
+    let capChangePercent24hUSD: Double
     
     enum CodingKeys: String, CodingKey {
-        case totalMarketCap = "total_market_cap"
-        case totalVolume = "total_volume"
-        case marketCapPercentage = "market_cap_percentage"
-        case marketCapChangePercentage24HUsd = "market_cap_change_percentage_24h_usd"
+        case capTotals = "total_market_cap"
+        case volumeTotals = "total_volume"
+        case capPercentages = "market_cap_percentage"
+        case capChangePercent24hUSD = "market_cap_change_percentage_24h_usd"
     }
     
-    var marketCap: String {
-        if let item = totalMarketCap.first(where: { $0.key == "usd" }) {
+    var formattedMarketCap: String {
+        if let item = capTotals.first(where: { $0.key == "usd" }) {
             return "$" + item.value.formattedWithAbbreviations()
         }
         return ""
     }
     
-    var volume: String {
-        if let item = totalVolume.first(where: { $0.key == "usd" }) {
+    var formattedVolume: String {
+        if let item = volumeTotals.first(where: { $0.key == "usd" }) {
             return "$" + item.value.formattedWithAbbreviations()
         }
         return ""
     }
     
-    var btcDominance: String {
-        if let item = marketCapPercentage.first(where: { $0.key == "btc" }) {
+    var bitcoinDominance: String {
+        if let item = capPercentages.first(where: { $0.key == "btc" }) {
             return item.value.asPercentString()
         }
         return ""
     }
-    
 }
 

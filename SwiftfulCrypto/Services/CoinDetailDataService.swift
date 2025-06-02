@@ -1,35 +1,34 @@
 //
-//  CoinDetailDataService.swift
-//  SwiftfulCrypto
+//  AssetDetailService.swift
+//  CryptoLauncher
 //
-//  Created by Nick Sarno on 5/11/21.
+//  Adapted by AI Assistant
 //
 
 import Foundation
 import Combine
 
-class CoinDetailDataService {
+class AssetDetailService {
     
-    @Published var coinDetails: CoinDetailModel? = nil
+    @Published var assetDetails: AssetDetailInfo? = nil
     
-    var coinDetailSubscription: AnyCancellable?
-    let coin: CoinModel
+    var assetDetailSubscription: AnyCancellable?
+    let asset: CryptoAsset
     
-    init(coin: CoinModel) {
-        self.coin = coin
-        getCoinDetails()
+    init(asset: CryptoAsset) {
+        self.asset = asset
+        fetchAssetDetails()
     }
     
-    func getCoinDetails() {
-        guard let url = URL(string: "https://api.coingecko.com/api/v3/coins/\(coin.id)?localization=false&tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false") else { return }
+    func fetchAssetDetails() {
+        guard let url = URL(string: "https://api.coingecko.com/api/v3/coins/\(asset.id)?localization=false&tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false") else { return }
 
-        coinDetailSubscription = NetworkingManager.download(url: url)
-            .decode(type: CoinDetailModel.self, decoder: JSONDecoder())
+        assetDetailSubscription = NetworkingManager.download(url: url)
+            .decode(type: AssetDetailInfo.self, decoder: JSONDecoder())
             .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: NetworkingManager.handleCompletion, receiveValue: { [weak self] (returnedCoinDetails) in
-                self?.coinDetails = returnedCoinDetails
-                self?.coinDetailSubscription?.cancel()
+            .sink(receiveCompletion: NetworkingManager.handleCompletion, receiveValue: { [weak self] (returnedAssetDetails) in
+                self?.assetDetails = returnedAssetDetails
+                self?.assetDetailSubscription?.cancel()
             })
     }
-    
 }
